@@ -1,25 +1,25 @@
-srcdir := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain
-builddir := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain
-INSTALL_DIR := /home/juancarlos/Escritorio/new_toolchain
+srcdir := /home/juancarlos/Escritorio/prueba/creator-sail-assembler
+builddir := /home/juancarlos/Escritorio/prueba/creator-sail-assembler
+INSTALL_DIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/toolchain_build
 
-GCC_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/gcc
-BINUTILS_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/binutils
-NEWLIB_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/newlib
-GLIBC_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/glibc
-MUSL_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/musl
-LINUX_HEADERS_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/linux-headers
-GDB_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/gdb
-QEMU_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/qemu
-SPIKE_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/spike
-PK_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/pk
-LLVM_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/llvm
-DEJAGNU_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/dejagnu
+GCC_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/gcc
+BINUTILS_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/binutils
+NEWLIB_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/newlib
+GLIBC_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/glibc
+MUSL_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/musl
+LINUX_HEADERS_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/linux-headers
+GDB_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/gdb
+QEMU_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/qemu
+SPIKE_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/spike
+PK_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/pk
+LLVM_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/llvm
+DEJAGNU_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/dejagnu
 DEBUG_INFO := 
 ENABLE_DEFAULT_PIE := --disable-default-pie
-DEJAGNU_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-compiler-toolchain/dejagnu
-MPFR_DIR := --with-mpfr=/home/juancarlos/mpfrwasm64/mpfr-4.2.1/mpfr-install
-GMP_DIR := --with-gmp=/home/juancarlos/newlibgmp
-MPC_DIR := --with-mpc=/home/juancarlos/mpcwasm64/mpc-1.3.1/mpc-install
+DEJAGNU_SRCDIR := /home/juancarlos/Escritorio/prueba/creator-sail-assembler/dejagnu
+MPFR_DIR := --with-mpfr=MPFR_EM_DIR
+GMP_DIR := --with-gmp=GMP_EM_DIR
+MPC_DIR := --with-mpc=MPC_EM_DIR
 
 SIM ?= qemu
 
@@ -36,8 +36,8 @@ else
 gccsrcdir := $(abspath $(GCC_SRCDIR))
 endif
 
-WITH_ARCH ?= --with-arch=rv64gc
-WITH_ABI ?= --with-abi=lp64d
+WITH_ARCH ?= --with-arch=rv32gc
+WITH_ABI ?= --with-abi=ilp32d
 WITH_TUNE ?= --with-tune=rocket
 WITH_ISA_SPEC ?= --with-isa-spec=20191213
 SYSROOT := $(INSTALL_DIR)/sysroot
@@ -64,13 +64,13 @@ export PATH AWK SED
 MULTILIB_FLAGS := --disable-multilib
 MULTILIB_GEN := 
 ifeq ($(MULTILIB_GEN),)
-NEWLIB_MULTILIB_NAMES := rv64gc-lp64d
+NEWLIB_MULTILIB_NAMES := rv32gc-ilp32d
 GCC_MULTILIB_FLAGS := $(MULTILIB_FLAGS)
 else
 NEWLIB_MULTILIB_NAMES := $(shell echo "$(MULTILIB_GEN)" | $(SED) 's/;/\n/g' | $(SED) '/^$$/d' | $(AWK) '{split($$0,a,"-"); printf "%s-%s ", a[1],a[2]}')
 GCC_MULTILIB_FLAGS := $(MULTILIB_FLAGS) --with-multilib-generator="$(MULTILIB_GEN)"
 endif
-GLIBC_MULTILIB_NAMES := rv64gc-lp64d
+GLIBC_MULTILIB_NAMES := rv32gc-ilp32d
 GCC_CHECKING_FLAGS := 
 
 EXTRA_MULTILIB_TEST := 
@@ -123,7 +123,7 @@ MUSL_TARGET_FLAGS := $(MUSL_TARGET_FLAGS_EXTRA)
 MUSL_CC_FOR_TARGET ?= $(MUSL_TUPLE)-gcc
 MUSL_CXX_FOR_TARGET ?= $(MUSL_TUPLE)-g++
 
-CONFIGURE_HOST   = --host=wasm64-unknown-emscripten
+CONFIGURE_HOST   = --host=wasm32-unknown-emscripten
 PREPARATION_STAMP:=stamps/check-write-permission
 
 all: newlib
@@ -340,7 +340,7 @@ stamps/install-host-gcc: $(GCC_SRCDIR)
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--prefix=$(builddir)/install-host-gcc \
 		--without-system-zlib \
 		--enable-languages=c,c++ \
@@ -359,7 +359,7 @@ stamps/build-binutils-linux: $(BINUTILS_SRCDIR) $(PREPARATION_STAMP)
 	mkdir $(notdir $@)
 # CC_FOR_TARGET is required for the ld testsuite.
 	cd $(notdir $@) && CC_FOR_TARGET=$(GLIBC_CC_FOR_TARGET) $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(LINUX_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -386,7 +386,7 @@ stamps/build-gdb-linux: $(GDB_SRCDIR) $(PREPARATION_STAMP)
 	mkdir $(notdir $@)
 # CC_FOR_TARGET is required for the ld testsuite.
 	cd $(notdir $@) && CC_FOR_TARGET=$(GLIBC_CC_FOR_TARGET) $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(LINUX_TUPLE) \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
@@ -409,7 +409,7 @@ stamps/build-glibc-linux-headers: $(GLIBC_SRCDIR) stamps/build-gcc-linux-stage1
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && CC="$(GLIBC_CC_FOR_TARGET)" $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		# --host=$(LINUX_TUPLE) \
 		--prefix=$(SYSROOT)/usr \
 		--enable-shared \
@@ -440,7 +440,7 @@ endif
 		CXXFLAGS="$(CXXFLAGS_FOR_TARGET) -O2 $($@_CFLAGS)" \
 		ASFLAGS="$(ASFLAGS_FOR_TARGET) $($@_CFLAGS)" \
 		$</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		# --host=$(call make_tuple,$($@_XLEN),linux-gnu) \
 		--prefix=/usr \
 		--disable-werror \
@@ -462,7 +462,7 @@ stamps/build-gcc-linux-stage1: $(GCC_SRCDIR) stamps/build-binutils-linux \
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
 		--target=$(LINUX_TUPLE) \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
 		--with-newlib \
@@ -501,7 +501,7 @@ stamps/build-gcc-linux-stage2: $(GCC_SRCDIR) $(addprefix stamps/build-glibc-linu
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(LINUX_TUPLE) \
 		--prefix=$(INSTALL_DIR) \
 		--with-sysroot=$(SYSROOT) \
@@ -536,7 +536,7 @@ stamps/build-binutils-linux-native: $(BINUTILS_SRCDIR) stamps/build-gcc-linux-st
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(LINUX_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -561,7 +561,7 @@ stamps/build-gcc-linux-native: $(GCC_SRCDIR) stamps/build-gcc-linux-stage2 stamp
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(LINUX_TUPLE) \
 		--prefix=$(INSTALL_DIR)/native \
 		--without-system-zlib \
@@ -596,7 +596,7 @@ stamps/build-binutils-newlib: $(BINUTILS_SRCDIR) $(PREPARATION_STAMP)
 # CC_FOR_TARGET is required for the ld testsuite.
 	cd $(notdir $@) && CC_FOR_TARGET=$(NEWLIB_CC_FOR_TARGET) $</configure \
 		--target=$(NEWLIB_TUPLE) \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
 		$(MPC_DIR) \
@@ -624,7 +624,7 @@ stamps/build-gdb-newlib: $(GDB_SRCDIR) $(PREPARATION_STAMP)
 		--target=$(NEWLIB_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--prefix=$(INSTALL_DIR) \
 		 \
 		--disable-werror \
@@ -644,7 +644,7 @@ stamps/build-gcc-newlib-stage1: $(GCC_SRCDIR) stamps/build-binutils-newlib
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(NEWLIB_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -681,7 +681,7 @@ stamps/build-newlib: $(NEWLIB_SRCDIR) stamps/build-gcc-newlib-stage1
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(NEWLIB_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -702,7 +702,7 @@ stamps/build-newlib-nano: $(NEWLIB_SRCDIR) stamps/build-gcc-newlib-stage1
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(NEWLIB_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -759,7 +759,7 @@ stamps/build-gcc-newlib-stage2: $(GCC_SRCDIR) stamps/build-newlib \
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(NEWLIB_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -803,7 +803,7 @@ stamps/build-binutils-musl: $(BINUTILS_SRCDIR) $(PREPARATION_STAMP)
 	mkdir $(notdir $@)
 # CC_FOR_TARGET is required for the ld testsuite.
 	cd $(notdir $@) && CC_FOR_TARGET=$(MUSL_CC_FOR_TARGET) $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(MUSL_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -831,7 +831,7 @@ stamps/build-gcc-musl-stage1: $(GCC_SRCDIR) stamps/build-binutils-musl \
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--target=$(MUSL_TUPLE) \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
@@ -871,7 +871,7 @@ stamps/build-musl-linux-headers: $(MUSL_SRCDIR) stamps/build-gcc-musl-stage1
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && CC="$(MUSL_CC_FOR_TARGET)" $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
 		$(MPC_DIR) \
@@ -894,7 +894,7 @@ stamps/build-musl-linux: $(MUSL_SRCDIR) stamps/build-gcc-musl-stage1
 		CXXFLAGS="$(CXXFLAGS_FOR_TARGET) -O2 $($@_CFLAGS)" \
 		ASFLAGS="$(ASFLAGS_FOR_TARGET) $($@_CFLAGS)" \
 		$</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
 		$(MPC_DIR) \
@@ -914,7 +914,7 @@ stamps/build-gcc-musl-stage2: $(GCC_SRCDIR) stamps/build-musl-linux \
 	# Disable libsanitizer for now
 	# https://github.com/google/sanitizers/issues/1080
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
 		$(MPC_DIR) \
@@ -951,7 +951,7 @@ stamps/build-spike: $(SPIKE_SRCDIR) $(PREPARATION_STAMP)
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
 		$(MPC_DIR) \
@@ -965,7 +965,7 @@ stamps/build-pk32: $(PK_SRCDIR) stamps/build-gcc-newlib-stage2
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		$(GMP_DIR) \
 		$(MPFR_DIR) \
 		$(MPC_DIR) \
@@ -981,7 +981,7 @@ stamps/build-pk64: $(PK_SRCDIR) stamps/build-gcc-newlib-stage2
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--prefix=$(INSTALL_DIR) \
 		# --host=$(NEWLIB_TUPLE) \
 		--with-arch=rv64gc \
@@ -995,7 +995,7 @@ stamps/build-qemu: $(QEMU_SRCDIR) $(PREPARATION_STAMP)
 	rm -rf $@ $(notdir $@)
 	mkdir $(notdir $@)
 	cd $(notdir $@) && $</configure \
-		--host=wasm64-unknown-emscripten \
+		--host=wasm32-unknown-emscripten \
 		--prefix=$(INSTALL_DIR) \
 		--target-list=$(QEMU_TARGETS) \
 		--interp-prefix=$(INSTALL_DIR)/sysroot \
