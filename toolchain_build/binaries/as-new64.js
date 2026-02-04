@@ -1,3 +1,4 @@
+let ofile = null;
 var Module = (() => {
   var _scriptName = import.meta.url;
   
@@ -750,10 +751,10 @@ var wasmBinaryFile;
 
 function findWasmBinary() {
   if (Module["locateFile"]) {
-    return locateFile("as-new.wasm");
+    return locateFile("as-new64.wasm");
   }
   // Use bundler-friendly `new URL(..., import.meta.url)` pattern; works in browsers too.
-  return new URL("as-new.wasm", import.meta.url).href;
+  return new URL("as-new64.wasm", import.meta.url).href;
 }
 
 function getBinarySync(file) {
@@ -4288,6 +4289,8 @@ var _proc_exit = code => {
 };
 
 /** @suppress {duplicate } */ /** @param {boolean|number=} implicit */ var exitJS = (status, implicit) => {
+  ofile = FS.readFile("./out.o");
+  console.log(ofile);
   EXITSTATUS = status;
   if (!keepRuntimeAlive()) {
     exitRuntime();
@@ -4751,6 +4754,7 @@ Module["run"] = run;
 
 Module["FS"] = FS;
 
+
 var missingLibrarySymbols = [ "writeI53ToI64", "writeI53ToI64Clamped", "writeI53ToI64Signaling", "writeI53ToU64Clamped", "writeI53ToU64Signaling", "readI53FromI64", "readI53FromU64", "convertI32PairToI53", "convertI32PairToI53Checked", "convertU32PairToI53", "getTempRet0", "setTempRet0", "inetPton4", "inetNtop4", "inetPton6", "inetNtop6", "readSockaddr", "writeSockaddr", "emscriptenLog", "readEmAsmArgs", "jstoi_q", "listenOnce", "autoResumeAudioContext", "getDynCaller", "dynCall", "runtimeKeepalivePush", "runtimeKeepalivePop", "asmjsMangle", "HandleAllocator", "getNativeTypeSize", "addOnInit", "addOnPostCtor", "addOnPreMain", "addOnExit", "STACK_SIZE", "STACK_ALIGN", "POINTER_SIZE", "ASSERTIONS", "getCFunc", "ccall", "cwrap", "uleb128Encode", "sigToWasmTypes", "generateFuncType", "convertJsFunctionToWasm", "getEmptyTableSlot", "updateTableMap", "getFunctionAddress", "addFunction", "removeFunction", "reallyNegative", "strLen", "reSign", "formatString", "intArrayToString", "AsciiToString", "UTF16ToString", "stringToUTF16", "lengthBytesUTF16", "UTF32ToString", "stringToUTF32", "lengthBytesUTF32", "stringToNewUTF8", "writeArrayToMemory", "registerKeyEventCallback", "maybeCStringToJsString", "findEventTarget", "getBoundingClientRect", "fillMouseEventData", "registerMouseEventCallback", "registerWheelEventCallback", "registerUiEventCallback", "registerFocusEventCallback", "fillDeviceOrientationEventData", "registerDeviceOrientationEventCallback", "fillDeviceMotionEventData", "registerDeviceMotionEventCallback", "screenOrientation", "fillOrientationChangeEventData", "registerOrientationChangeEventCallback", "fillFullscreenChangeEventData", "registerFullscreenChangeEventCallback", "JSEvents_requestFullscreen", "JSEvents_resizeCanvasForFullscreen", "registerRestoreOldStyle", "hideEverythingExceptGivenElement", "restoreHiddenElements", "setLetterbox", "softFullscreenResizeWebGLRenderTarget", "doRequestFullscreen", "fillPointerlockChangeEventData", "registerPointerlockChangeEventCallback", "registerPointerlockErrorEventCallback", "requestPointerLock", "fillVisibilityChangeEventData", "registerVisibilityChangeEventCallback", "registerTouchEventCallback", "fillGamepadEventData", "registerGamepadEventCallback", "registerBeforeUnloadEventCallback", "fillBatteryEventData", "battery", "registerBatteryEventCallback", "setCanvasElementSize", "getCanvasElementSize", "jsStackTrace", "getCallstack", "convertPCtoSourceLocation", "checkWasiClock", "wasiRightsToMuslOFlags", "wasiOFlagsToMuslOFlags", "safeSetTimeout", "setImmediateWrapped", "safeRequestAnimationFrame", "clearImmediateWrapped", "registerPostMainLoop", "registerPreMainLoop", "getPromise", "makePromise", "idsToPromises", "makePromiseCallback", "ExceptionInfo", "findMatchingCatch", "Browser_asyncPrepareDataCounter", "arraySum", "addDays", "getSocketFromFD", "getSocketAddress", "FS_unlink", "FS_mkdirTree", "_setNetworkCallback", "heapObjectForWebGLType", "toTypedArrayIndex", "webgl_enable_ANGLE_instanced_arrays", "webgl_enable_OES_vertex_array_object", "webgl_enable_WEBGL_draw_buffers", "webgl_enable_WEBGL_multi_draw", "webgl_enable_EXT_polygon_offset_clamp", "webgl_enable_EXT_clip_control", "webgl_enable_WEBGL_polygon_mode", "emscriptenWebGLGet", "computeUnpackAlignedImageSize", "colorChannelsInGlTextureFormat", "emscriptenWebGLGetTexPixelData", "emscriptenWebGLGetUniform", "webglGetUniformLocation", "webglPrepareUniformLocationsBeforeFirstUse", "webglGetLeftBracePos", "emscriptenWebGLGetVertexAttrib", "__glGetActiveAttribOrUniform", "writeGLArray", "registerWebGlEventCallback", "runAndAbortIfError", "ALLOC_NORMAL", "ALLOC_STACK", "allocate", "writeStringToMemory", "writeAsciiToMemory", "setErrNo", "demangle", "stackTrace" ];
 
 missingLibrarySymbols.forEach(missingLibrarySymbol);
@@ -4776,10 +4780,14 @@ function callMain(args = []) {
   HEAPU64[((argv_ptr) / 8)] = BigInt(0);
   try {
     var ret = entryFunction(argc, BigInt(argv));
+    ofile = FS.readFile("./out.o");
+    console.log(ofile);
     // if we're not running an evented main loop, it's time to exit
     exitJS(ret, /* implicit = */ true);
     return ret;
   } catch (e) {
+    ofile = FS.readFile("./out.o");
+    console.log(ofile);
     return handleException(e);
   }
 }
@@ -4795,7 +4803,7 @@ function stackCheckInit() {
 
 function run(args = arguments_) {
   if (runDependencies > 0) {
-    dependenciesFulfilled = run;
+    // dependenciesFulfilled = run;
     return;
   }
   stackCheckInit();
@@ -4813,12 +4821,22 @@ function run(args = arguments_) {
     Module["calledRun"] = true;
     if (ABORT) return;
     initRuntime();
+    var asm_files = args.pop();
+    for (let i = 0; i < asm_files.length; i ++ ){
+      FS.writeFile('./'+asm_files[i].name, asm_files[i].code);
+      args.push('./'+asm_files[i].name);
+    }
+    // for(var i = 2; i < args.length; i++) {
+    //   FS.writeFile('./code' + (i - 2) + '.s', args[i]);
+    //   args[i] = 'code' + (i - 2) + '.s';
+    // }
+    args = ["-o","out.o", ...args, /*"-march=rv64imfdv", "-mabi=lp64d", "code.s"*/];
     preMain();
-    readyPromiseResolve(Module);
+    // readyPromiseResolve(Module);
     Module["onRuntimeInitialized"]?.();
     var noInitialRun = Module["noInitialRun"] || true;
     legacyModuleProp("noInitialRun", "noInitialRun");
-    if (!noInitialRun) callMain(args);
+    callMain(args);
     postRun();
   }
   if (Module["setStatus"]) {
@@ -4831,6 +4849,7 @@ function run(args = arguments_) {
     doRun();
   }
   checkStackCookie();
+  return ofile;
 }
 
 if (Module["preInit"]) {
@@ -4840,7 +4859,7 @@ if (Module["preInit"]) {
   }
 }
 
-run();
+// run();
 
 // end include: postamble.js
 // include: postamble_modularize.js
@@ -4866,18 +4885,18 @@ for (const prop of Object.keys(Module)) {
   }
 }
 
-
+  readyPromiseResolve(Module);
   return moduleRtn;
 }
 );
 })();
-(() => {
-  // Create a small, never-async wrapper around Module which
-  // checks for callers incorrectly using it with `new`.
-  var real_Module = Module;
-  Module = function(arg) {
-    if (new.target) throw new Error("Module() should not be called with `new Module()`");
-    return real_Module(arg);
-  }
-})();
+// (() => {
+//   // Create a small, never-async wrapper around Module which
+//   // checks for callers incorrectly using it with `new`.
+//   var real_Module = Module;
+//   Module = function(arg) {
+//     if (new.target) throw new Error("Module() should not be called with `new Module()`");
+//     return real_Module(arg);
+//   }
+// })();
 export default Module;

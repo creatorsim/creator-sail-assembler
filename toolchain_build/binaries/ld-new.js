@@ -1,4 +1,5 @@
-
+let elfile = null;
+import { libs_to_load } from "../CNAssambler.mjs";
 var Module = (() => {
   var _scriptDir = import.meta.url;
   
@@ -5771,10 +5772,10 @@ function ExitStatus(status) {
 
 var calledMain = false;
 
-dependenciesFulfilled = function runCaller() {
- if (!calledRun) run();
- if (!calledRun) dependenciesFulfilled = runCaller;
-};
+// dependenciesFulfilled = function runCaller() {
+//  if (!calledRun) run();
+//  if (!calledRun) dependenciesFulfilled = runCaller;
+// };
 
 function callMain(args) {
  assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on Module["onRuntimeInitialized"])');
@@ -5805,6 +5806,7 @@ function stackCheckInit() {
 }
 
 function run(args) {
+  shouldRunNow = true;
  args = args || arguments_;
  if (runDependencies > 0) {
   return;
@@ -5820,6 +5822,13 @@ function run(args) {
   Module["calledRun"] = true;
   if (ABORT) return;
   initRuntime();
+  FS.writeFile("./linker.ld", args[0]);
+  args.shift();
+  FS.writeFile("./input.o", args[0]);
+  args.shift();
+  for (let i = 0; i < libs_to_load.length; i++){
+    FS.writeFile("./" + libs_to_load[i].name, libs_to_load[i].file);
+  }
   preMain();
   readyPromiseResolve(Module);
   if (Module["onRuntimeInitialized"]) Module["onRuntimeInitialized"]();
@@ -5838,11 +5847,15 @@ function run(args) {
   doRun();
  }
  checkStackCookie();
+//  FS.readFile("./output.elf");
+return elfile;
 }
 
 Module["run"] = run;
 
 function exit(status, implicit) {
+  elfile = FS.readFile("./output.elf");
+  console.log(elfile);
  EXITSTATUS = status;
  if (keepRuntimeAlive()) {
   if (!implicit) {
@@ -5876,8 +5889,8 @@ var shouldRunNow = false;
 
 if (Module["noInitialRun"]) shouldRunNow = false;
 
-run();
-
+// run();
+  readyPromiseResolve(Module);
 
   return Module.ready
 }

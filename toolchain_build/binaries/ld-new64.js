@@ -1,3 +1,5 @@
+let elfile = null;
+import { libs_to_load } from "../CNAssambler.mjs";
 var Module = (() => {
   var _scriptName = import.meta.url;
   
@@ -751,10 +753,10 @@ var wasmBinaryFile;
 
 function findWasmBinary() {
   if (Module["locateFile"]) {
-    return locateFile("ld-new.wasm");
+    return locateFile("ld-new64.wasm");
   }
   // Use bundler-friendly `new URL(..., import.meta.url)` pattern; works in browsers too.
-  return new URL("ld-new.wasm", import.meta.url).href;
+  return new URL("ld-new64.wasm", import.meta.url).href;
 }
 
 function getBinarySync(file) {
@@ -4617,6 +4619,8 @@ var _proc_exit = code => {
 };
 
 /** @suppress {duplicate } */ /** @param {boolean|number=} implicit */ var exitJS = (status, implicit) => {
+  elfile = FS.readFile("./output.elf");
+  console.log(elfile);
   EXITSTATUS = status;
   if (!keepRuntimeAlive()) {
     exitRuntime();
@@ -5198,17 +5202,18 @@ function stackCheckInit() {
 
 function run(args = arguments_) {
   if (runDependencies > 0) {
-    dependenciesFulfilled = run;
+    // dependenciesFulfilled = run;
     return;
   }
   stackCheckInit();
   preRun();
   // a preRun added a dependency, run will be called later
   if (runDependencies > 0) {
-    dependenciesFulfilled = run;
+    // dependenciesFulfilled = run;
     return;
   }
   function doRun() {
+    console.log(args);
     // run may have just been called through dependencies being fulfilled just in this very frame,
     // or while the async setStatus time below was happening
     assert(!calledRun);
@@ -5216,12 +5221,19 @@ function run(args = arguments_) {
     Module["calledRun"] = true;
     if (ABORT) return;
     initRuntime();
+    FS.writeFile("./linker.ld", args[0]);
+    args.shift();
+    FS.writeFile("./input.o", args[0]);
+    args.shift();
+    for (let i = 0; i < libs_to_load.length; i++){
+      FS.writeFile("./" + libs_to_load[i].name, libs_to_load[i].file);
+    }
     preMain();
-    readyPromiseResolve(Module);
+    // readyPromiseResolve(Module);
     Module["onRuntimeInitialized"]?.();
     var noInitialRun = Module["noInitialRun"] || true;
     legacyModuleProp("noInitialRun", "noInitialRun");
-    if (!noInitialRun) callMain(args);
+    callMain(args);
     postRun();
   }
   if (Module["setStatus"]) {
@@ -5234,6 +5246,7 @@ function run(args = arguments_) {
     doRun();
   }
   checkStackCookie();
+  return elfile;
 }
 
 if (Module["preInit"]) {
@@ -5243,7 +5256,7 @@ if (Module["preInit"]) {
   }
 }
 
-run();
+// run();
 
 // end include: postamble.js
 // include: postamble_modularize.js
@@ -5269,7 +5282,7 @@ for (const prop of Object.keys(Module)) {
   }
 }
 
-
+  readyPromiseResolve(Module);
   return moduleRtn;
 }
 );

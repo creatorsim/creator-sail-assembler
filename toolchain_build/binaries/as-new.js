@@ -1,4 +1,4 @@
-
+let ofile = null;
 var Module = (() => {
   var _scriptDir = import.meta.url;
   
@@ -5702,10 +5702,10 @@ function ExitStatus(status) {
 
 var calledMain = false;
 
-dependenciesFulfilled = function runCaller() {
- if (!calledRun) run();
- if (!calledRun) dependenciesFulfilled = runCaller;
-};
+// dependenciesFulfilled = function runCaller() {
+//  if (!calledRun) run();
+//  if (!calledRun) dependenciesFulfilled = runCaller;
+// };
 
 function callMain(args) {
  assert(runDependencies == 0, 'cannot call main when async dependencies remain! (listen on Module["onRuntimeInitialized"])');
@@ -5721,6 +5721,8 @@ function callMain(args) {
  SAFE_HEAP_STORE(((argv >> 2) + argc) * 4, 0, 4);
  try {
   var ret = entryFunction(argc, argv);
+
+    // console.log(FS.readFile("./out.o"));
   exit(ret, true);
   return ret;
  } catch (e) {
@@ -5736,6 +5738,12 @@ function stackCheckInit() {
 }
 
 function run(args) {
+  shouldRunNow = true;
+//  if (args === undefined) {
+//   readyPromiseResolve(Module);
+//   return;
+// }
+  
  args = args || arguments_;
  if (runDependencies > 0) {
   return;
@@ -5743,7 +5751,7 @@ function run(args) {
  stackCheckInit();
  preRun();
  if (runDependencies > 0) {
-  return;
+  return run(args);
  }
  function doRun() {
   if (calledRun) return;
@@ -5751,8 +5759,20 @@ function run(args) {
   Module["calledRun"] = true;
   if (ABORT) return;
   initRuntime();
+  // at args[2], we have a list of assembly programs to compile
+  var asm_files = args.pop();
+  for (let i = 0; i < asm_files.length; i ++ ){
+    FS.writeFile('./'+asm_files[i].name, asm_files[i].code);
+    args.push('./'+asm_files[i].name);
+  }
+  // for(var i = 2; i < args.length; i++) {
+  //   FS.writeFile('./code' + (i - 2) + '.s', args[i]);
+  //   args[i] = 'code' + (i - 2) + '.s';
+  // }
+  // console.log(FS.readdir("./"));
+  args = ["-o","out.o", ...args /*"-march=rv32imfdv", "-mabi=ilp32d", "code.s"*/];
   preMain();
-  readyPromiseResolve(Module);
+  // readyPromiseResolve(Module);
   if (Module["onRuntimeInitialized"]) Module["onRuntimeInitialized"]();
   if (shouldRunNow) callMain(args);
   postRun();
@@ -5769,11 +5789,17 @@ function run(args) {
   doRun();
  }
  checkStackCookie();
+
+//  readyPromiseResolve(Module);
+//  return Module.ready;
+  return ofile;
 }
 
 Module["run"] = run;
 
 function exit(status, implicit) {
+  ofile = FS.readFile("./out.o");
+  console.log(ofile);
  EXITSTATUS = status;
  if (keepRuntimeAlive()) {
   if (!implicit) {
@@ -5807,7 +5833,10 @@ var shouldRunNow = false;
 
 if (Module["noInitialRun"]) shouldRunNow = false;
 
-run();
+// run(); 
+
+
+  readyPromiseResolve(Module);
 
 
   return Module.ready

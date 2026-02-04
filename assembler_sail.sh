@@ -407,10 +407,13 @@ if [[ "$ARCHITECTURE" = "RV64" ]]; then
                           --with-arch=rv64gc --with-abi=lp64d
   make build-binutils V=1 --trace -j1
   cp build-binutils-newlib/gas/as-new.js toolchain_build/binaries/as-new64.js
+  npx jscodeshift -t ./toolchain_build/transform-as64.js ./toolchain_build/binaries/as-new64.js
   cp build-binutils-newlib/gas/as-new.wasm toolchain_build/binaries/as-new64.wasm
   cp build-binutils-newlib/ld/ld-new.js toolchain_build/binaries/ld-new64.js
+  npx jscodeshift -t ./toolchain_build/transform-ld64.js ./toolchain_build/binaries/ld-new64.js
   cp build-binutils-newlib/ld/ld-new.wasm toolchain_build/binaries/ld-new64.wasm
   cp build-binutils-newlib/binutils/objdump.js toolchain_build/binaries/objdump64.js
+  npx jscodeshift -t ./toolchain_build/transform-objdump64.js ./toolchain_build/binaries/objdump64.js
   cp build-binutils-newlib/binutils/objdump.wasm toolchain_build/binaries/objdump64.wasm
 elif [[ "$ARCHITECTURE" = "RV32" ]]; then
   echo "Compile RISC-V 32 bits architecture on web environment"
@@ -437,10 +440,13 @@ elif [[ "$ARCHITECTURE" = "RV32" ]]; then
                           --with-arch=rv32gc --with-abi=ilp32d 
   make build-binutils V=1 --trace -j1 
   cp build-binutils-newlib/gas/as-new.js toolchain_build/binaries/as-new.js
+  npx jscodeshift -t ./toolchain_build/transform-as32.js ./toolchain_build/binaries/as-new.js
   cp build-binutils-newlib/gas/as-new.wasm toolchain_build/binaries/as-new.wasm
   cp build-binutils-newlib/ld/ld-new.js toolchain_build/binaries/ld-new.js
+  npx jscodeshift -t ./toolchain_build/transform-ld32.js ./toolchain_build/binaries/ld-new.js
   cp build-binutils-newlib/ld/ld-new.wasm toolchain_build/binaries/ld-new.wasm
   cp build-binutils-newlib/binutils/objdump.js toolchain_build/binaries/objdump.js
+  npx jscodeshift -t ./toolchain_build/transform-objdump32.js ./toolchain_build/binaries/objdump.js
   cp build-binutils-newlib/binutils/objdump.wasm toolchain_build/binaries/objdump.wasm
 else
   echo "Nothing to compile"
